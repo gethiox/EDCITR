@@ -2,6 +2,7 @@
 
 # Warning: in-development rough state, not ready for release yet 
 Didn't get time and lost interest to polish this up for a proper release yet. Soon™
+YT quick APP overview: https://youtu.be/xYEAxzrO1rA
 
 [![Latest Release](https://img.shields.io/github/v/release/gethiox/edcitr?sort=semver)](https://github.com/gethiox/edcitr/releases)
 [![Go Report Card](https://goreportcard.com/badge/github.com/gethiox/edcitr)](https://goreportcard.com/report/github.com/gethiox/edcitr)
