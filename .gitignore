@@ -1,0 +1,11 @@
+builds/
+
+# ignore everything in cmd/ except cmd/EDCITR
+cmd/*
+!cmd/EDCITR
+
+# go-winres output for windows binary metadata inclusion
+cmd/EDCITR/*.syso
+
+pprof/
+EDCITR-crash-*.log

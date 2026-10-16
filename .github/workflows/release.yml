@@ -1,0 +1,66 @@
+name: Build and Release Secure Binaries
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write # Required to upload files to the Release
+  id-token: write # Required for Sigstore Artifact Attestations (Provenance)
+  attestations: write
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - os: windows
+            runner: windows-latest
+            binary_name: EDCITR.exe
+          - os: linux
+            runner: ubuntu-latest
+            binary_name: EDCITR
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.0'
+          cache: true
+
+      # --- LINUX SPECIFIC DEPENDENCIES (Raylib CGO requirements) ---
+      - name: Install Linux Dependencies (Raylib)
+        if: matrix.os == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev libxi-dev libxcursor-dev libxrandr-dev libxinerama-dev libwayland-dev libxkbcommon-dev
+
+      # --- WINDOWS SPECIFIC SETUP (Icons and Versioning) ---
+      - name: Install go-winres
+        if: matrix.os == 'windows'
+        run: go install github.com/tc-hib/go-winres@latest
+
+      - name: Generate Windows Resources (.syso)
+        if: matrix.os == 'windows'
+        run: go-winres make --product-version ${{ github.ref_name }} --file-version ${{ github.ref_name }} --in assets/winres/winres.json --out cmd/EDCITR/rsrc
+
+      # --- BUILD ---
+      - name: Build Binary
+        run: go build -trimpath -ldflags="-s -w" -o builds/${{ matrix.binary_name }} ./cmd/EDCITR
+
+      # --- SECURITY: ARTIFACT ATTESTATIONS ---
+      - name: Attest Build Provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: 'builds/${{ matrix.binary_name }}'
+
+      # --- GITHUB RELEASE UPLOAD ---
+      - name: Upload Binary to Github Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: builds/${{ matrix.binary_name }}
